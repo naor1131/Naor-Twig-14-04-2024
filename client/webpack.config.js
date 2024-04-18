@@ -7,7 +7,7 @@ module.exports = {
     bundle: path.resolve(__dirname, "index.tsx"),
   },
   output: {
-    path: path.resolve(__dirname, "dist"),
+    path: path.resolve(__dirname, "build"),
     filename: "[name][contenthash].js", // keep the names of the assets.
     clean: true,
     assetModuleFilename: "[name][ext]", // keep the names of the assets.
@@ -15,7 +15,7 @@ module.exports = {
   devtool: "source-map",
   devServer: {
     static: {
-      directory: path.resolve(__dirname, "dist"),
+      directory: path.resolve(__dirname, "build"),
     },
     port: 3000,
     open: true,
