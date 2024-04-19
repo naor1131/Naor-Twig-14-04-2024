@@ -1,3 +1,6 @@
 import { Mediator } from "./src/mediator";
 
-const mediator = new Mediator("http://localhost:3001/config", 8080);
+const GAME_SERVER_URL = process.env.GAME_SERVER_URL || "http://localhost:3001";
+const WSPort = Number(process.env.PORT || 8080);
+
+const mediator = new Mediator(`${GAME_SERVER_URL}/config`, WSPort);

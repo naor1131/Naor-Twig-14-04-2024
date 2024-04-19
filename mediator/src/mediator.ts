@@ -1,6 +1,8 @@
 import WebSocket from "ws";
-import { GameConfiguration, WSMessage } from "../shared/types";
+import { DEFAULT_GAME_CONFIG, GameConfiguration, WSMessage } from "../shared/types";
 import url from "url";
+import http from "http";
+import express from "express";
 
 export class Mediator {
   private port: number;
@@ -16,42 +18,56 @@ export class Mediator {
   constructor(configUrl: string, port: number) {
     this.port = port;
 
-    this.wsServer = new WebSocket.Server({ port }, () => {
-      console.log(`WebSocket server is running at "ws://localhost:${port}"`);
+    const app = express();
+    const server = http.createServer(app);
+    server.listen(port);
+
+    this.wsServer = new WebSocket.Server({ server }, () => {
+      console.log(`WebSocket server is running on port: ${port}"`);
     });
+
     this.connectedClients = new Map<string, WebSocket>();
 
     this.configUrl = configUrl;
-    this.config = { pollingFrequency: 1000, scoreRange: { min: 0, max: 100 }, allowedClients: ["client3", "client4"] };
+    this.config = DEFAULT_GAME_CONFIG;
 
     this.pollingIntervalId = null;
 
+    this.enableWebSocketConnections();
+    this.startPolling();
+
     // fetch config and only then start polling.
-    this.loadConfig().then(this.enableWebSocketConnections).then(this.startPolling);
+    // this.loadConfig()
+    //   .catch(() => {})
+    //   .then(() => this.enableWebSocketConnections())
+    //   .then(() => this.startPolling());
   }
 
   async loadConfig() {
     try {
       const response = await fetch(this.configUrl);
       const config = await response.json();
+      console.log("FETCHED CONFIG", config);
       this.config = config;
     } catch (err) {
-      console.error("Error loading config:", err);
+      throw err;
     }
   }
 
   enableWebSocketConnections() {
+    console.log("enableWebSocketConnections");
     // set a listener for new client connections to the server.
     this.wsServer.on("connection", (ws, req) => {
+      ws.send(JSON.stringify("connected to WS server"));
       // get the clientId from the request.
       const query = url.parse(req.url as string, true).query;
       const clientId = query["clientId"] as string;
 
       console.log(`Client Connected (${clientId}).`);
 
-      // Close the connection with status code 1008 (policy violation) if client is not on the list.
-      if (!this.config.allowedClients.includes(clientId.toLowerCase())) {
-        ws.close(403, "Error - Client is not registered.");
+      // Close the connection with status code 1008 (policy violation) if client is not registered.
+      if (!this.config.allowedClients.includes(clientId)) {
+        ws.close(1008, "Error - Client is not registered.");
         return;
       }
 
@@ -82,7 +98,7 @@ export class Mediator {
         // broadcast the score to all clients.
         this.broadcast(wsMessage);
       } catch (err) {
-        console.error("Error fetching/broadcasting score:", err);
+        throw err;
       }
     }, this.config.pollingFrequency);
   }

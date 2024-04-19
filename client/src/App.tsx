@@ -2,21 +2,22 @@ import React, { useState } from "react";
 import ScoreBoard from "./components/score-board/score-board";
 import useMediator from "./hooks/useMediator";
 import classnames from "classnames";
-import logo from "./logo.svg";
+// import logo from "./logo.svg";
+import TextInput from "./components/text-input/text-input";
+import { MEDIATOR_WS_URL } from "./types";
 
 import "./App.css";
-import TextInput from "./components/text-input/text-input";
 
 function App() {
   const [clientId, setClientId] = useState("");
-  const { isConnected, gameState, errorMessage } = useMediator("ws://localhost:8080", clientId);
+  const { isConnected, gameState, errorMessage } = useMediator(MEDIATOR_WS_URL, clientId);
 
   const color = gameState.score > gameState.prevScore ? "green" : gameState.score < gameState.prevScore ? "red" : "gray";
 
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className={classnames("App-logo", isConnected ? "animation-active" : "")} alt="logo" />
+        {/* <img src={logo} className={classnames("App-logo", isConnected ? "animation-active" : "")} alt="logo" /> */}
         <TextInput
           label="Client ID"
           value={clientId}
